@@ -19,6 +19,10 @@ module.exports = {
         use: 'ts-loader',
         exclude: /node_modules/,
       },
+      {
+        test: /\.css$/i,
+        use: ['style-loader', 'css-loader', 'postcss-loader'],
+      },
     ],
   },
   plugins: [
@@ -34,6 +38,28 @@ module.exports = {
     port: 8080,
     open: true,
     hot: true,
+    proxy: [
+      {
+        context: ['/aftermath-api'],
+        target: 'https://testnet.aftermath.finance',
+        changeOrigin: true,
+        secure: true,
+        logLevel: 'debug',
+        pathRewrite: {
+          '^/aftermath-api': '/api',
+        },
+      },
+      {
+        context: ['/sui-api'],
+        target: 'https://fullnode.testnet.sui.io',
+        changeOrigin: true,
+        secure: true,
+        logLevel: 'debug',
+        pathRewrite: {
+          '^/sui-api': '',
+        },
+      },
+    ],
   },
 };
 

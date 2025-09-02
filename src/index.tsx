@@ -1,15 +1,10 @@
-import React from "react";
-import ReactDOM from "react-dom/client";
+import './index.css';
+import '@mysten/dapp-kit/dist/index.css';
 
-function App() {
-  return (
-    <div style={{ padding: 40 }}>
-      <h1>Aftermath Swap</h1>
-      <p>Empty starter page. Implement the task here.</p>
-    </div>
-  );
-}
+import React from 'react';
+import ReactDOM from 'react-dom/client';
 
-const root = ReactDOM.createRoot(document.getElementById("root")!);
+import App from './App';
+
+const root = ReactDOM.createRoot(document.getElementById('root')!);
 root.render(<App />);
-
