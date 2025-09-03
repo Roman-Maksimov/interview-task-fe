@@ -108,12 +108,14 @@ export const useStakingForm = () => {
           return;
         }
 
-        const suiStakeAmount = amountToDecimal(data.amount);
+        // Calculate actual staking amount (total - fee)
+        const externalFeeAmount = data.amount * EXTERNAL_FEE_PERCENTAGE;
+        const actualStakingAmount = data.amount - externalFeeAmount;
 
         // Create stake transaction with external fee
         const stakeTx = await staking.getStakeTransaction({
           walletAddress: address,
-          suiStakeAmount: BigInt(suiStakeAmount.toString()),
+          suiStakeAmount: BigInt(amountToDecimal(data.amount).toString()),
           validatorAddress,
           externalFee: {
             recipient: address, // Fee goes to the user's address
@@ -131,11 +133,11 @@ export const useStakingForm = () => {
 
         // Set success message
         const afSuiAmount = stakingInfo?.exchangeRate
-          ? data.amount * stakingInfo.exchangeRate
+          ? actualStakingAmount * stakingInfo.exchangeRate
           : 0;
 
         setStakingSuccess(
-          `Successfully staked ${data.amount} SUI and received ${afSuiAmount.toFixed(6)} afSUI!`
+          `Successfully staked ${actualStakingAmount.toFixed(6)} SUI (from ${data.amount} SUI total) and received ${afSuiAmount.toFixed(6)} afSUI!`
         );
 
         // Auto-hide success message after 5 seconds
@@ -173,17 +175,22 @@ export const useStakingForm = () => {
       }
 
       const balance = await getBalance();
-      const amountInWei = amountToDecimal(numericValue);
+      const totalAmountInWei = amountToDecimal(numericValue);
 
-      // Calculate external fee (percentage of the staking amount)
+      // Calculate external fee (percentage of the total amount)
       const externalFeeAmount = numericValue * EXTERNAL_FEE_PERCENTAGE;
-      const externalFeeInWei = amountToDecimal(externalFeeAmount);
 
-      // Total required: staking amount + external fee
-      const totalRequired = amountInWei.add(externalFeeInWei);
+      // Actual staking amount = total amount - external fee
+      const actualStakingAmount = numericValue - externalFeeAmount;
 
-      if (totalRequired.greaterThan(balance)) {
-        return `Not enough balance. Need ${(numericValue + externalFeeAmount).toFixed(6)} SUI (${numericValue} SUI + ${externalFeeAmount.toFixed(6)} SUI external fee)`;
+      // Check if actual staking amount is positive
+      if (actualStakingAmount <= 0) {
+        return `Amount too small. After ${(EXTERNAL_FEE_PERCENTAGE * 100).toFixed(1)}% fee, staking amount would be ${actualStakingAmount.toFixed(6)} SUI`;
+      }
+
+      // Check if user has enough balance for the total amount
+      if (totalAmountInWei.greaterThan(balance)) {
+        return `Not enough balance. Need ${numericValue.toFixed(6)} SUI total (${actualStakingAmount.toFixed(6)} SUI staking + ${externalFeeAmount.toFixed(6)} SUI fee)`;
       }
 
       return true;
@@ -196,12 +203,16 @@ export const useStakingForm = () => {
   }, [stakingInfo]);
 
   const calculateExpectedAfSui = useCallback(
-    (suiAmount: number) => {
+    (totalSuiAmount: number) => {
       if (!stakingInfo?.exchangeRate) {
         return 0;
       }
 
-      return suiAmount * stakingInfo.exchangeRate;
+      // Calculate actual staking amount (total - fee)
+      const externalFeeAmount = totalSuiAmount * EXTERNAL_FEE_PERCENTAGE;
+      const actualStakingAmount = totalSuiAmount - externalFeeAmount;
+
+      return actualStakingAmount * stakingInfo.exchangeRate;
     },
     [stakingInfo]
   );
@@ -212,6 +223,16 @@ export const useStakingForm = () => {
     }
     return suiAmount * EXTERNAL_FEE_PERCENTAGE;
   }, []);
+
+  const calculateAfSuiFromStakingAmount = useCallback(
+    (stakingAmount: number) => {
+      if (!stakingInfo?.exchangeRate) {
+        return 0;
+      }
+      return stakingAmount * stakingInfo.exchangeRate;
+    },
+    [stakingInfo]
+  );
 
   return {
     initialized,
@@ -225,6 +246,7 @@ export const useStakingForm = () => {
     getExchangeRate,
     calculateExpectedAfSui,
     calculateExternalFee,
+    calculateAfSuiFromStakingAmount,
     loadStakingInfo,
   };
 };

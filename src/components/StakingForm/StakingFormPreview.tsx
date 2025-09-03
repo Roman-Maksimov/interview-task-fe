@@ -12,8 +12,8 @@ export const StakingFormPreview: FC = () => {
   const {
     stakingInfo,
     stakingInfoLoading,
-    calculateExpectedAfSui,
     calculateExternalFee,
+    calculateAfSuiFromStakingAmount,
   } = useStakingForm();
 
   const amount = watch('amount');
@@ -37,11 +37,16 @@ export const StakingFormPreview: FC = () => {
       return null;
     }
 
+    const externalFee = calculateExternalFee(numericAmount);
+    const actualStakingAmount = numericAmount - externalFee;
+    const estimatedAfSui = calculateAfSuiFromStakingAmount(actualStakingAmount);
+
     return {
-      estimatedAfSui: calculateExpectedAfSui(numericAmount),
-      externalFee: calculateExternalFee(numericAmount),
+      estimatedAfSui,
+      externalFee,
+      actualStakingAmount,
     };
-  }, [numericAmount, calculateExpectedAfSui, calculateExternalFee]);
+  }, [numericAmount, calculateExternalFee, calculateAfSuiFromStakingAmount]);
 
   // Show validation errors
   if (formState.errors.amount) {
@@ -78,7 +83,7 @@ export const StakingFormPreview: FC = () => {
     return null;
   }
 
-  const { estimatedAfSui, externalFee } = calculations;
+  const { estimatedAfSui, externalFee, actualStakingAmount } = calculations;
   const { apy, exchangeRate } = stakingInfo;
 
   return (
@@ -100,13 +105,16 @@ export const StakingFormPreview: FC = () => {
         </div>
 
         <div className="border-t pt-2">
-          <div className="text-sm font-medium text-gray-700">Fees:</div>
+          <div className="text-sm font-medium text-gray-700">Breakdown:</div>
+          <div className="text-sm text-gray-500">
+            Staking amount: {actualStakingAmount.toFixed(6)} SUI
+          </div>
           <div className="text-sm text-gray-500">
             External fee: {externalFee.toFixed(6)} SUI (
             {(EXTERNAL_FEE_PERCENTAGE * 100).toFixed(1)}%)
           </div>
           <div className="text-sm font-medium text-gray-700">
-            Total required: {(numericAmount + externalFee).toFixed(6)} SUI
+            Total to spend: {numericAmount.toFixed(6)} SUI
           </div>
         </div>
       </div>

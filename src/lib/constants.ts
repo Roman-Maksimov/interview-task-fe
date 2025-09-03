@@ -10,3 +10,5 @@ export const MAX_STAKING_AMOUNT = 1_000_000;
 
 // External fee percentage for staking transactions
 export const EXTERNAL_FEE_PERCENTAGE = 0.01; // 1%
+export const MIN_STAKING_AMOUNT_WITH_FEE =
+  Math.ceil((1 / (1 - EXTERNAL_FEE_PERCENTAGE)) * 100) / 100;

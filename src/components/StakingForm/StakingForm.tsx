@@ -1,7 +1,10 @@
 import React, { FC, useEffect } from 'react';
 import { Controller, FormProvider, useForm } from 'react-hook-form';
 
-import { MAX_STAKING_AMOUNT, MIN_STAKING_AMOUNT } from '../../lib/constants';
+import {
+  MAX_STAKING_AMOUNT,
+  MIN_STAKING_AMOUNT_WITH_FEE,
+} from '../../lib/constants';
 import { Button } from '../../ui/button';
 import {
   Card,
@@ -19,7 +22,7 @@ import { StakingFormScheme, useStakingForm } from './useStakingForm';
 
 export const StakingForm: FC = () => {
   const form = useForm<StakingFormScheme>({
-    defaultValues: { amount: MIN_STAKING_AMOUNT },
+    defaultValues: { amount: MIN_STAKING_AMOUNT_WITH_FEE },
     mode: 'onChange',
     reValidateMode: 'onChange',
   });
@@ -57,7 +60,7 @@ export const StakingForm: FC = () => {
                 name="amount"
                 rules={{
                   min: {
-                    value: MIN_STAKING_AMOUNT,
+                    value: MIN_STAKING_AMOUNT_WITH_FEE,
                     message: 'Minimum amount is 1 SUI',
                   },
                   max: {
