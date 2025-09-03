@@ -1,6 +1,7 @@
-import { FC } from 'react';
+import { FC, useMemo } from 'react';
 import { useFormContext } from 'react-hook-form';
 
+import { useDebounce } from '../../hooks/useDebounce';
 import { EXTERNAL_FEE_PERCENTAGE } from '../../lib/constants';
 import { Label } from '../../ui/label';
 import { Skeleton } from '../../ui/skeleton';
@@ -17,9 +18,30 @@ export const StakingFormPreview: FC = () => {
 
   const amount = watch('amount');
 
+  // Debounce the amount to avoid frequent recalculations
+  const debouncedAmount = useDebounce(amount, 300);
+
   // Convert amount to number and validate
   const numericAmount =
-    typeof amount === 'string' ? parseFloat(amount) : amount;
+    typeof debouncedAmount === 'string'
+      ? parseFloat(debouncedAmount)
+      : debouncedAmount;
+
+  // Show loading state for debounced calculations or staking info
+  const isCalculating =
+    amount !== debouncedAmount || formState.isValidating || stakingInfoLoading;
+
+  // Memoize calculations to avoid unnecessary recalculations
+  const calculations = useMemo(() => {
+    if (!numericAmount || isNaN(numericAmount) || numericAmount <= 0) {
+      return null;
+    }
+
+    return {
+      estimatedAfSui: calculateExpectedAfSui(numericAmount),
+      externalFee: calculateExternalFee(numericAmount),
+    };
+  }, [numericAmount, calculateExpectedAfSui, calculateExternalFee]);
 
   // Show validation errors
   if (formState.errors.amount) {
@@ -44,7 +66,7 @@ export const StakingFormPreview: FC = () => {
     return null;
   }
 
-  if (formState.isValidating || stakingInfoLoading) {
+  if (isCalculating) {
     return <Skeleton className="h-[173px] w-full" />;
   }
 
@@ -52,8 +74,11 @@ export const StakingFormPreview: FC = () => {
     return null;
   }
 
-  const estimatedAfSui = calculateExpectedAfSui(numericAmount);
-  const externalFee = calculateExternalFee(numericAmount);
+  if (!calculations) {
+    return null;
+  }
+
+  const { estimatedAfSui, externalFee } = calculations;
   const { apy, exchangeRate } = stakingInfo;
 
   return (
