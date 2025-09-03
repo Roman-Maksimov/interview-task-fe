@@ -14,7 +14,13 @@ export const StakingPage: FC = () => {
           SUI → afSUI Staking
         </h1>
 
-        {address ? <StakingForm /> : <ConnectWallet />}
+        {address ? (
+          <div className="max-w-4xl mx-auto space-y-6">
+            <StakingForm />
+          </div>
+        ) : (
+          <ConnectWallet />
+        )}
       </div>
     </div>
   );

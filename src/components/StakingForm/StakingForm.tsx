@@ -1,4 +1,4 @@
-import React, { FC } from 'react';
+import React, { FC, useEffect } from 'react';
 import { Controller, FormProvider, useForm } from 'react-hook-form';
 
 import { MAX_STAKING_AMOUNT, MIN_STAKING_AMOUNT } from '../../lib/constants';
@@ -21,6 +21,12 @@ export const StakingForm: FC = () => {
     defaultValues: { amount: MIN_STAKING_AMOUNT },
   });
   const { submit, validateAmount, initialized } = useStakingForm();
+
+  useEffect(() => {
+    if (initialized) {
+      form.trigger();
+    }
+  }, [form, initialized]);
 
   if (!initialized) {
     return <Skeleton className="h-[200px] w-full" />;
