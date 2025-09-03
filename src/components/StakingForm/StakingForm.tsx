@@ -21,7 +21,7 @@ export const StakingForm: FC = () => {
   const form = useForm<StakingFormScheme>({
     defaultValues: { amount: MIN_STAKING_AMOUNT },
   });
-  const { submit, validateAmount, initialized, stakingError } =
+  const { submit, validateAmount, initialized, stakingError, stakingSuccess } =
     useStakingForm();
 
   useEffect(() => {
@@ -93,6 +93,12 @@ export const StakingForm: FC = () => {
             {stakingError && (
               <div className="p-3 bg-red-50 border border-red-200 rounded-md">
                 <p className="text-sm text-red-600">{stakingError}</p>
+              </div>
+            )}
+
+            {stakingSuccess && (
+              <div className="p-3 bg-green-50 border border-green-200 rounded-md">
+                <p className="text-sm text-green-600">{stakingSuccess}</p>
               </div>
             )}
 

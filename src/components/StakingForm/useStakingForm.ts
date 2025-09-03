@@ -30,6 +30,7 @@ export const useStakingForm = () => {
   const [stakingInfo, setStakingInfo] = useState<StakingInfo | null>(null);
   const [stakingInfoLoading, setStakingInfoLoading] = useState(false);
   const [stakingError, setStakingError] = useState<string>();
+  const [stakingSuccess, setStakingSuccess] = useState<string>();
   const { address } = useAccountContext();
   const signAndExecuteTransactionMutation = useSignAndExecuteTransaction();
 
@@ -91,6 +92,7 @@ export const useStakingForm = () => {
       }
 
       setStakingError(undefined);
+      setStakingSuccess(undefined);
 
       try {
         const staking = afSdk.Staking();
@@ -118,6 +120,19 @@ export const useStakingForm = () => {
         });
 
         console.log('Staking transaction successful:', result);
+
+        // Set success message
+        const afSuiAmount = stakingInfo?.exchangeRate
+          ? data.amount * stakingInfo.exchangeRate
+          : 0;
+        setStakingSuccess(
+          `Successfully staked ${data.amount} SUI and received ${afSuiAmount.toFixed(6)} afSUI!`
+        );
+
+        // Auto-hide success message after 5 seconds
+        setTimeout(() => {
+          setStakingSuccess(undefined);
+        }, 5000);
 
         // Reload staking info to get updated data
         await loadStakingInfo();
@@ -175,6 +190,7 @@ export const useStakingForm = () => {
     stakingInfo,
     stakingInfoLoading,
     stakingError,
+    stakingSuccess,
     getExchangeRate,
     calculateExpectedAfSui,
     loadStakingInfo,
