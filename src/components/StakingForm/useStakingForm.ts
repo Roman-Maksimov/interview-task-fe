@@ -1,3 +1,4 @@
+import { useSignAndExecuteTransaction } from '@mysten/dapp-kit';
 import { Aftermath } from 'aftermath-ts-sdk';
 import { useCallback, useEffect, useState } from 'react';
 import { SubmitHandler, Validate } from 'react-hook-form';
@@ -28,7 +29,9 @@ export const useStakingForm = () => {
   const [initializeError, setInitializeError] = useState<string>();
   const [stakingInfo, setStakingInfo] = useState<StakingInfo | null>(null);
   const [stakingInfoLoading, setStakingInfoLoading] = useState(false);
+  const [stakingError, setStakingError] = useState<string>();
   const { address } = useAccountContext();
+  const signAndExecuteTransactionMutation = useSignAndExecuteTransaction();
 
   const loadStakingInfo = useCallback(async () => {
     if (!initialized) return;
@@ -80,9 +83,51 @@ export const useStakingForm = () => {
     })();
   }, [loadStakingInfo]);
 
-  const submit = useCallback<SubmitHandler<StakingFormScheme>>(() => {
-    //
-  }, []);
+  const submit = useCallback<SubmitHandler<StakingFormScheme>>(
+    async data => {
+      if (!address || !stakingInfo?.validators.length) {
+        setStakingError('Wallet not connected or no validators available');
+        return;
+      }
+
+      setStakingError(undefined);
+
+      try {
+        const staking = afSdk.Staking();
+
+        // Use the first available validator
+        const validatorAddress = stakingInfo.validators[0]?.suiAddress;
+        if (!validatorAddress) {
+          setStakingError('No validators available');
+          return;
+        }
+
+        const suiStakeAmount = amountToDecimal(data.amount);
+
+        // Create stake transaction
+        const stakeTx = await staking.getStakeTransaction({
+          walletAddress: address,
+          suiStakeAmount: BigInt(suiStakeAmount.toString()),
+          validatorAddress,
+          isSponsoredTx: false,
+        });
+
+        // Sign and execute transaction
+        const result = await signAndExecuteTransactionMutation.mutateAsync({
+          transaction: stakeTx,
+        });
+
+        console.log('Staking transaction successful:', result);
+
+        // Reload staking info to get updated data
+        await loadStakingInfo();
+      } catch (error) {
+        console.error('Staking transaction failed:', error);
+        setStakingError((error as Error).message || 'Transaction failed');
+      }
+    },
+    [address, stakingInfo, loadStakingInfo, signAndExecuteTransactionMutation]
+  );
 
   const getBalance = useCallback(async () => {
     if (!address) {
@@ -129,6 +174,7 @@ export const useStakingForm = () => {
     validateAmount,
     stakingInfo,
     stakingInfoLoading,
+    stakingError,
     getExchangeRate,
     calculateExpectedAfSui,
     loadStakingInfo,

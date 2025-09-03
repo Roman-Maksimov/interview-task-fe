@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@mysten/dapp-kit": "^0.16.11",
-    "@mysten/sui": "^1.34.0",
+    "@mysten/sui": "1.32.0",
     "@tanstack/react-query": "^5.85.9",
     "aftermath-ts-sdk": "^1.3.19",
     "class-variance-authority": "^0.7.1",

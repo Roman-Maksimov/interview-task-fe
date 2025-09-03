@@ -9,6 +9,7 @@ import {
   useState,
 } from 'react';
 
+import { KEEP_WALLET_ADDRESS } from '../lib/constants';
 import { fn } from '../utils/fn';
 
 export interface AccountContextProps {
@@ -27,6 +28,11 @@ export const AccountProvider: FC<PropsWithChildren> = ({ children }) => {
   );
 
   useEffect(() => {
+    if (!KEEP_WALLET_ADDRESS) {
+      localStorage.removeItem('address');
+      return;
+    }
+
     if (address) {
       localStorage.setItem('address', address);
     } else {

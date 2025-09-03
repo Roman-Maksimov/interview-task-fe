@@ -2,6 +2,7 @@ import React, { FC, useEffect } from 'react';
 import { Controller, FormProvider, useForm } from 'react-hook-form';
 
 import { MAX_STAKING_AMOUNT, MIN_STAKING_AMOUNT } from '../../lib/constants';
+import { Button } from '../../ui/button';
 import {
   Card,
   CardContent,
@@ -20,7 +21,8 @@ export const StakingForm: FC = () => {
   const form = useForm<StakingFormScheme>({
     defaultValues: { amount: MIN_STAKING_AMOUNT },
   });
-  const { submit, validateAmount, initialized } = useStakingForm();
+  const { submit, validateAmount, initialized, stakingError } =
+    useStakingForm();
 
   useEffect(() => {
     if (initialized) {
@@ -87,6 +89,20 @@ export const StakingForm: FC = () => {
             </div>
 
             <StakingFormPreview />
+
+            {stakingError && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                <p className="text-sm text-red-600">{stakingError}</p>
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={!form.formState.isValid || form.formState.isSubmitting}
+            >
+              {form.formState.isSubmitting ? 'Staking...' : 'Stake SUI'}
+            </Button>
           </CardContent>
         </Card>
       </form>
