@@ -3,7 +3,11 @@ import { Aftermath } from 'aftermath-ts-sdk';
 import { useCallback, useEffect, useState } from 'react';
 import { SubmitHandler, Validate } from 'react-hook-form';
 
-import { COIN_SUI, NETWORK } from '../../lib/constants';
+import {
+  COIN_SUI,
+  EXTERNAL_FEE_PERCENTAGE,
+  NETWORK,
+} from '../../lib/constants';
 import { useAccountContext } from '../../providers/AccountProvider';
 import { amountToDecimal } from '../../utils/amountToDecimal';
 
@@ -106,11 +110,15 @@ export const useStakingForm = () => {
 
         const suiStakeAmount = amountToDecimal(data.amount);
 
-        // Create stake transaction
+        // Create stake transaction with external fee
         const stakeTx = await staking.getStakeTransaction({
           walletAddress: address,
           suiStakeAmount: BigInt(suiStakeAmount.toString()),
           validatorAddress,
+          externalFee: {
+            recipient: address, // Fee goes to the user's address
+            feePercentage: EXTERNAL_FEE_PERCENTAGE,
+          },
           isSponsoredTx: false,
         });
 
@@ -125,6 +133,7 @@ export const useStakingForm = () => {
         const afSuiAmount = stakingInfo?.exchangeRate
           ? data.amount * stakingInfo.exchangeRate
           : 0;
+
         setStakingSuccess(
           `Successfully staked ${data.amount} SUI and received ${afSuiAmount.toFixed(6)} afSUI!`
         );
@@ -156,10 +165,25 @@ export const useStakingForm = () => {
 
   const validateAmount = useCallback<Validate<number, StakingFormScheme>>(
     async value => {
-      const balance = await getBalance();
+      // Convert string to number and validate
+      const numericValue = parseFloat(`${value}`);
 
-      if (amountToDecimal(value).greaterThan(balance)) {
-        return 'Not enough balance';
+      if (!value || isNaN(numericValue) || numericValue <= 0) {
+        return 'Please enter a valid amount';
+      }
+
+      const balance = await getBalance();
+      const amountInWei = amountToDecimal(numericValue);
+
+      // Calculate external fee (percentage of the staking amount)
+      const externalFeeAmount = numericValue * EXTERNAL_FEE_PERCENTAGE;
+      const externalFeeInWei = amountToDecimal(externalFeeAmount);
+
+      // Total required: staking amount + external fee
+      const totalRequired = amountInWei.add(externalFeeInWei);
+
+      if (totalRequired.greaterThan(balance)) {
+        return `Not enough balance. Need ${(numericValue + externalFeeAmount).toFixed(6)} SUI (${numericValue} SUI + ${externalFeeAmount.toFixed(6)} SUI external fee)`;
       }
 
       return true;
@@ -182,6 +206,13 @@ export const useStakingForm = () => {
     [stakingInfo]
   );
 
+  const calculateExternalFee = useCallback((suiAmount: number) => {
+    if (!suiAmount || typeof suiAmount !== 'number' || isNaN(suiAmount)) {
+      return 0;
+    }
+    return suiAmount * EXTERNAL_FEE_PERCENTAGE;
+  }, []);
+
   return {
     initialized,
     initializeError,
@@ -193,6 +224,7 @@ export const useStakingForm = () => {
     stakingSuccess,
     getExchangeRate,
     calculateExpectedAfSui,
+    calculateExternalFee,
     loadStakingInfo,
   };
 };

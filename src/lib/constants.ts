@@ -7,3 +7,6 @@ export const KEEP_WALLET_ADDRESS = false;
 
 export const MIN_STAKING_AMOUNT = 1;
 export const MAX_STAKING_AMOUNT = 1_000_000;
+
+// External fee percentage for staking transactions
+export const EXTERNAL_FEE_PERCENTAGE = 0.01; // 1%
